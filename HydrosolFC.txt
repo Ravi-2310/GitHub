@@ -1,0 +1,87 @@
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
+#include <OneWire.h>
+#include <MAX6675.h>
+#include <SPI.h>
+
+// Pin Definitions
+#define TDS_SENSOR_PIN 36
+#define SCK_PIN 5
+#define CS_PIN 23
+#define MISO_PIN 19
+
+// Create an instance of the MAX6675 class
+MAX6675 thermocouple (SCK_PIN, CS_PIN, MISO_PIN);
+
+// Create OLED display object (I2C address is usually 0x3C)
+Adafruit_SSD1306 display(34, 18, &Wire, -1);  // -1 for reset pin (not used)
+
+// Function to read TDS value
+int readTDS() {
+  int sensorValue = analogRead(TDS_SENSOR_PIN);
+  float voltage = sensorValue * (3.3 / 4095.0);  // Calculate voltage
+  float tdsValue = (133.42 * voltage * voltage * voltage - 255.86 * voltage * voltage + 857.39 * voltage) * 0.5;
+  return int(tdsValue);  // Convert to integer value
+}
+
+void setup() {
+  // Initialize Serial Monitor for debugging
+  Serial.begin(115200);
+  Serial.println("MAX6675 Temperature Sensor with ESP32");
+
+  // Initialize OLED display
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    while (true);
+  }
+  display.clearDisplay();
+delay(500)
+  // Initialize temperature sensor
+  thermocouple.begin()
+    
+  
+}
+
+void loop() {
+  // Read the temperature from MAX6675
+  float temperatureC = thermocouple.readCelsius();
+
+  //Check if the sensor is connected properly
+  if(isnan(temperatureC)){
+    Serial.println("Error reading temperature");
+  }
+  else
+  {
+    //Print the temperature to the Serial Moniter
+    Serial.print("Temperature:");
+    Serial.println(temperatureC);
+    Serial.println("C");
+  }
+
+  // Read the TDS value from the TDS sensor
+  int tds = readTDS();
+
+  // Clear display and print values
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
+  // Display TDS value
+  display.setCursor(0, 0);
+  display.print("TDS: ");
+  display.print(tds);
+  display.print(" ppm");
+
+  // Display temperature
+  display.setCursor(0, 20);
+  display.print("Temp: ");
+  display.print(temperature);
+  display.print(" C");
+
+  // Update the display
+  display.display();
+
+  // Wait before next reading
+  delay(1000);  // 1 seconds delay
+}
